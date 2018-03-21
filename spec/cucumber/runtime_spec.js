@@ -4,16 +4,18 @@ describe("Cucumber.Runtime", function () {
   var Cucumber = requireLib('cucumber');
   var configuration;
   var runtime;
-  var isDryRunRequested, isFailFastRequested, isStrictRequested;
+  var isDryRunRequested, isFailFastRequested, isStrictRequested, worldParameters;
 
   beforeEach(function () {
     isStrictRequested = false;
     isDryRunRequested = false;
     isFailFastRequested = false;
+    worldParameters = {some: 'data'};
     configuration = createSpyWithStubs("configuration", {
       isDryRunRequested: isDryRunRequested,
       isFailFastRequested: isFailFastRequested,
       isStrictRequested: isStrictRequested,
+      getWorldParameters: worldParameters,
       shouldFilterStackTraces: true
     });
     spyOn(Cucumber.Runtime.StackTraceFilter, 'filter');
@@ -22,16 +24,16 @@ describe("Cucumber.Runtime", function () {
   });
 
   describe("start()", function () {
-    var features, supportCodeLibrary, callback, astTreeWalker;
+    var features, supportCodeLibrary, callback, featuresRunner;
 
     beforeEach(function () {
       features           = createSpy("features (AST)");
       supportCodeLibrary = createSpy("support code library");
-      astTreeWalker      = createSpyWithStubs("AST tree walker", {walk: null});
+      featuresRunner      = createSpyWithStubs("features runner", {run: null});
       callback           = createSpy("callback");
       spyOn(runtime, 'getFeatures').and.returnValue(features);
       spyOn(runtime, 'getSupportCodeLibrary').and.returnValue(supportCodeLibrary);
-      spyOn(Cucumber.Runtime, 'AstTreeWalker').and.returnValue(astTreeWalker);
+      spyOn(Cucumber.Runtime, 'FeaturesRunner').and.returnValue(featuresRunner);
     });
 
     it("fails when no callback is passed", function () {
@@ -56,14 +58,15 @@ describe("Cucumber.Runtime", function () {
       expect(runtime.getSupportCodeLibrary).toHaveBeenCalled();
     });
 
-    it("creates a new AST tree walker", function () {
+    it("creates a new features runner", function () {
       runtime.start(callback);
       var options = {
         dryRun: isDryRunRequested,
         failFast: isFailFastRequested,
-        strict: isStrictRequested
+        strict: isStrictRequested,
+        worldParameters: worldParameters
       };
-      expect(Cucumber.Runtime.AstTreeWalker).toHaveBeenCalledWith(features, supportCodeLibrary, [], options);
+      expect(Cucumber.Runtime.FeaturesRunner).toHaveBeenCalledWith(features, supportCodeLibrary, [], options);
     });
 
     describe("when listeners are attached", function () {
@@ -79,9 +82,10 @@ describe("Cucumber.Runtime", function () {
         var options = {
           dryRun: isDryRunRequested,
           failFast: isFailFastRequested,
-          strict: isStrictRequested
+          strict: isStrictRequested,
+          worldParameters: worldParameters
         };
-        expect(Cucumber.Runtime.AstTreeWalker).toHaveBeenCalledWith(features, supportCodeLibrary, [listener], options);
+        expect(Cucumber.Runtime.FeaturesRunner).toHaveBeenCalledWith(features, supportCodeLibrary, [listener], options);
       });
     });
 
@@ -107,17 +111,17 @@ describe("Cucumber.Runtime", function () {
       });
     });
 
-    it("tells the AST tree walker to walk", function () {
+    it("tells the features runner to run", function () {
       runtime.start(callback);
-      expect(astTreeWalker.walk).toHaveBeenCalledWithAFunctionAsNthParameter(1);
+      expect(featuresRunner.run).toHaveBeenCalledWithAFunctionAsNthParameter(1);
     });
 
-    describe("when the AST tree walker is done walking", function () {
+    describe("when the features runner is done running", function () {
       var walkCallback, walkResults;
 
       beforeEach(function () {
         runtime.start(callback);
-        walkCallback = astTreeWalker.walk.calls.mostRecent().args[0];
+        walkCallback = featuresRunner.run.calls.mostRecent().args[0];
         walkResults = createSpy("AST tree walker results");
       });
 

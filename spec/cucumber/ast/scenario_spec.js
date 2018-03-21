@@ -6,8 +6,7 @@ describe("Cucumber.Ast.Scenario", function () {
 
   beforeEach(function () {
     var scenarioData = {
-      description: 'description',
-      locations: [{path: 'path', line: 1}, {line: 2}],
+      locations: [{line: 1}, {line: 2}],
       name: 'name',
       steps: [
         {step1: 'data'},
@@ -27,7 +26,7 @@ describe("Cucumber.Ast.Scenario", function () {
     tag2 = createSpy('tag 2');
     spyOn(Cucumber.Ast, 'Tag').and.returnValues(tag1, tag2);
 
-    scenario = Cucumber.Ast.Scenario(scenarioData);
+    scenario = Cucumber.Ast.Scenario(scenarioData, 'uri');
   });
 
   describe("constructor", function () {
@@ -67,6 +66,13 @@ describe("Cucumber.Ast.Scenario", function () {
   });
 
   describe("getDescription()", function () {
+    var feature;
+
+    beforeEach(function() {
+      feature = createSpyWithStubs('feature', {getScenarioDescriptionByLines: 'description'});
+      scenario.setFeature(feature);
+    });
+
     it("returns the description of the scenario", function () {
       expect(scenario.getDescription()).toEqual('description');
     });
@@ -74,7 +80,7 @@ describe("Cucumber.Ast.Scenario", function () {
 
   describe("getUri()", function () {
     it("returns the URI on which the background starts", function () {
-      expect(scenario.getUri()).toEqual('path');
+      expect(scenario.getUri()).toEqual('uri');
     });
   });
 
@@ -87,40 +93,6 @@ describe("Cucumber.Ast.Scenario", function () {
   describe("getTags()", function () {
     it("returns the tags", function () {
       expect(scenario.getTags()).toEqual([tag1, tag2]);
-    });
-  });
-
-  describe("acceptVisitor", function () {
-    var visitor, callback;
-
-    beforeEach(function () {
-      visitor  = createSpyWithStubs("visitor", {visitStep: null});
-      callback = createSpy("callback");
-      scenario.acceptVisitor(visitor, callback);
-    });
-
-    it("instructs the visitor to visit the first step", function() {
-      expect(visitor.visitStep).toHaveBeenCalledWith(step1, jasmine.any(Function));
-    });
-
-    describe('after the first step is visited', function () {
-      beforeEach(function() {
-        visitor.visitStep.calls.mostRecent().args[1]();
-      });
-
-      it("instructs the visitor to visit the second step", function() {
-        expect(visitor.visitStep).toHaveBeenCalledWith(step2, jasmine.any(Function));
-      });
-
-      describe('after the second step is visited', function () {
-        beforeEach(function() {
-          visitor.visitStep.calls.mostRecent().args[1]();
-        });
-
-        it("calls back", function() {
-          expect(callback).toHaveBeenCalled();
-        });
-      });
     });
   });
 });

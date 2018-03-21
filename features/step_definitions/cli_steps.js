@@ -10,11 +10,19 @@ var cliSteps = function cliSteps() {
   var executablePath = path.join(__dirname, '..', '..', 'bin', 'cucumber.js');
 
   this.When(/^I run cucumber.js(?: from the "([^"]*)" directory)?(?: with `(|.+)`)?$/, {timeout: 10000}, function(dir, args, callback) {
-    args = args || '';
+    args = args ? args.split(' ') : [];
+    args = args.map(function(arg) {
+      if (arg[0] === '\'' && arg[arg.length - 1] === '\'') {
+        return arg.slice(1, arg.length - 1);
+      } else {
+        return arg;
+      }
+    });
+    args.unshift(executablePath);
     var world = this;
     var cwd = dir ? path.join(this.tmpDir, dir) : this.tmpDir;
 
-    execFile(executablePath, args.split(' '), {cwd: cwd}, function (error, stdout, stderr) {
+    execFile('node', args, {cwd: cwd}, function (error, stdout, stderr) {
        world.lastRun = {
          error:  error,
          stdout: colors.strip(stdout),
@@ -55,16 +63,21 @@ var cliSteps = function cliSteps() {
                       getAdditionalErrorText(this.lastRun));
   });
 
-  this.Then(/^the (error )?output contains the text:$/, function(error, expectedOutput) {
+  this.Then(/^the (error )?output (does not)? ?contains? the text:$/, function(error, shouldFind, expectedOutput) {
+    var expectedToFind = !(shouldFind);
     var actualOutput = error ? this.lastRun.stderr : this.lastRun.stdout;
 
     actualOutput = normalizeText(actualOutput);
     expectedOutput = normalizeText(expectedOutput);
 
-    if (actualOutput.indexOf(expectedOutput) === -1)
-      throw new Error('Expected output to contain the following:\n' + expectedOutput + '\n' +
-                      'Got:\n' + actualOutput + '\n' +
-                      getAdditionalErrorText(this.lastRun));
+      if ((actualOutput.indexOf(expectedOutput) !== -1) !== expectedToFind) {
+          var errorPhrase = (expectedToFind) ? 'Expected output to contain the following:' : 'Expected output not to contain the following:';
+
+          throw new Error(errorPhrase + '\n' + expectedOutput + '\n' +
+              'Got:\n' + actualOutput + '\n' +
+              getAdditionalErrorText(this.lastRun));
+      }
+
   });
 
   this.Then(/^I see the version of Cucumber$/, function() {

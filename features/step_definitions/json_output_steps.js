@@ -113,13 +113,26 @@ var jsonOutputSteps = function jsonOutputSteps() {
   });
 
   this.Then(/^the step "([^"]*)" has status (failed|passed|pending)(?: with "([^"]*)")?$/, function (name, status, errorMessage) {
-    var features = JSON.parse(this.lastRun.stdout);
+    var features;
+    try {
+      features = JSON.parse(this.lastRun.stdout);
+    } catch (error) {
+      error.message += '\n\n' + this.lastRun.stdout + '\n\n' + getAdditionalErrorText(this.lastRun);
+      throw error;
+    }
     var step = findStep(features, function() {
       return true;
     }, function(step) {
       return step.name === name;
     });
-    assert.equal(step.result.status, status);
+    try {
+      assert.equal(step.result.status, status);
+    } catch (error) {
+      if (step.result.status === 'failed' && status !== 'failed') {
+        error.message += '\n\n Step Error Message: ' + step.result.error_message + '\n\n';
+      }
+      throw error;
+    }
     if (errorMessage && step.result.error_message.indexOf(errorMessage) === -1) {
       throw new Error('Expected "' + name + '" to have an error_message containing "' +
                       errorMessage + '"\n' + 'Got:\n' + step.result.error_message);
@@ -170,6 +183,25 @@ var jsonOutputSteps = function jsonOutputSteps() {
       return index === scenarioIndex;
     });
     assert.equal(scenario.name, name);
+  });
+
+  this.Then(/^the json output has the scenarios with names$/, function (table) {
+    var expectedNames = table.rows().map(function(row){ return row[0]; });
+    var features = JSON.parse(this.lastRun.stdout);
+    var actualNames = [];
+    features.forEach(function(feature) {
+      feature.elements.forEach(function(element){
+        if (element.type === 'scenario') {
+          actualNames.push(element.name);
+        }
+      });
+    });
+    assert.deepEqual(expectedNames, actualNames);
+  });
+
+  this.Then(/^the json output's first scenario has the description "([^"]*)"$/, function (description) {
+    var features = JSON.parse(this.lastRun.stdout);
+    assert.equal(features[0].elements[0].description.trim(), description);
   });
 
 };

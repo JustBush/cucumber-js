@@ -1,4 +1,88 @@
-### [master (unreleased)](https://github.com/cucumber/cucumber-js/compare/v0.10.4...master)
+### [master (unreleased)](https://github.com/cucumber/cucumber-js/compare/v1.3.3...master)
+
+### [1.3.3](https://github.com/cucumber/cucumber-js/compare/v1.3.2...v1.3.3) (2016-04-26)
+
+#### Bug Fixes
+
+* fix unhandled rejections in handlers (#792)
+
+### [1.3.2](https://github.com/cucumber/cucumber-js/compare/v1.3.1...v1.3.2) (2016-03-20)
+
+#### Bug Fixes
+
+* dependency: fix use of gherkin to not rely on removed field
+
+### [1.3.1](https://github.com/cucumber/cucumber-js/compare/v1.3.0...v1.3.1) (2016-09-30)
+
+#### Bug Fixes
+
+* pass formatter options to listener (#641) (Charlie Rudolph)
+* rerun formatter: output any scenario that doesn't pass (Charlie Rudolph)
+* populate scenario definition (#647) (Charlie Rudolph)
+* handle empty stacktraces (#605) (Hugues Malphettes)
+* use cross-platform symbols (#635) (Kevin Goslar)
+
+#### Documentation
+
+* fix node.js example (#637) (Jonathan Gomez)
+* fix links in event_handlers.md (#638) (Oliver Rogers)
+* fix hooks example (#644) (John McLaughlin)
+
+### [1.3.0](https://github.com/cucumber/cucumber-js/compare/v1.2.2...v1.3.0) (2016-09-08)
+
+#### New Features
+
+* add `--snippet-interface <INTERFACE>` CLI option (Charlie Rudolph)
+* add `--world-parameters <JSON>` CLI option (Charlie Rudolph)
+* add snippets formatter (Charlie Rudolph)
+* add support for ES6 default module syntax (dbillingham)
+* pretty formatter: add symbols (Charlie Rudolph)
+* add simplified hook parameters (Charlie Rudolph)
+
+#### Bug Fixes
+
+* step definition snippets internationalization (Charlie Rudolph)
+
+#### Documentation
+
+* document order of execution for multiple hooks (John McLaughlin)
+* breakup README.md, organize docs (Charlie Rudolph)
+
+### [1.2.2](https://github.com/cucumber/cucumber-js/compare/v1.2.1...v1.2.2) (2016-08-05)
+
+#### Bug Fixes
+
+* Fix error when stack trace has no frames (#610) (Jan Molak)
+
+### [1.2.1](https://github.com/cucumber/cucumber-js/compare/v1.2.0...v1.2.1) (2016-07-01)
+
+#### Bug Fixes
+
+* Fix hook / step definition location and stacktraces in the browser (#567, #538) (Charlie Rudolph)
+
+### [1.2.0](https://github.com/cucumber/cucumber-js/compare/v1.1.0...v1.2.0) (2016-06-24)
+
+#### Bug Fixes
+
+* Attachments
+  * Remove intermediate conversion to string (Charlie Rudolph)
+  * Use native base64 encoding which can encode binary (#589) (Benjamín Eidelman)
+
+### [1.1.0](https://github.com/cucumber/cucumber-js/compare/v1.0.0...v1.1.0) (2016-06-23)
+
+#### New Features
+
+* Add full support to `registerHandler` (Charlie Rudolph)
+  * Can now use all supported functions interfaces (synchronous, callback, promise, generators)
+  * Will throw any error received and immediately kill the test suite
+  * Supports handler specific timeouts
+  * Updated documentation
+
+#### Bug Fixes
+
+* CLI format: support absolute path on windows (Charlie Rudolph)
+* Fix typo in event name. (#590) (Artur Pomadowski)
+* Don't run hooks in dry run mode (Charlie Rudolph)
 
 ### [1.0.0](https://github.com/cucumber/cucumber-js/compare/v0.10.4...v1.0.0) (2016-05-30)
 

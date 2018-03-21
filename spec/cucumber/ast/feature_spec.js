@@ -14,8 +14,7 @@ describe("Cucumber.Ast.Feature", function () {
       tags: [
         {tag1: 'data'},
         {tag2: 'data'}
-      ],
-      uri: 'uri'
+      ]
     };
 
     scenario1 = createSpyWithStubs('scenario 1', {setFeature: null});
@@ -26,7 +25,7 @@ describe("Cucumber.Ast.Feature", function () {
     tag2 = createSpy('tag 2');
     spyOn(Cucumber.Ast, 'Tag').and.returnValues(tag1, tag2);
 
-    feature = Cucumber.Ast.Feature(featureData, scenarios);
+    feature = Cucumber.Ast.Feature(featureData, 'uri', scenarios);
   });
 
   describe("constructor", function () {
@@ -46,7 +45,7 @@ describe("Cucumber.Ast.Feature", function () {
           '  Scenario: Bar\n' +
           '    Then b\n';
         var gherkinDocument = new Gherkin.Parser().parse(source);
-        feature = Cucumber.Ast.Feature(gherkinDocument.feature, []);
+        feature = Cucumber.Ast.Feature(gherkinDocument.feature, 'uri', []);
       });
 
       it('returns the keyword', function() {
@@ -61,7 +60,7 @@ describe("Cucumber.Ast.Feature", function () {
           '  Scenario: Bar\n' +
           '    Then b\n';
         var gherkinDocument = new Gherkin.Parser().parse(source);
-        feature = Cucumber.Ast.Feature(gherkinDocument.feature, []);
+        feature = Cucumber.Ast.Feature(gherkinDocument.feature, 'uri', []);
       });
 
       it('returns the keyword', function() {
@@ -79,11 +78,90 @@ describe("Cucumber.Ast.Feature", function () {
           '    | what |\n' +
           '    | b    |';
         var gherkinDocument = new Gherkin.Parser().parse(source);
-        feature = Cucumber.Ast.Feature(gherkinDocument.feature, []);
+        feature = Cucumber.Ast.Feature(gherkinDocument.feature, 'uri', []);
       });
 
       it('returns the keyword', function() {
         expect(feature.getStepKeywordByLines([3])).toEqual('When ');
+      });
+    });
+  });
+
+  describe('getScenarioDescriptionByLines()', function() {
+    describe('from a scenario', function() {
+      describe('with a description', function() {
+        beforeEach(function() {
+          var source =
+            'Feature: Foo\n' +
+            '  Scenario: Bar\n' +
+            '    My scenario description\n' +
+            '\n' +
+            '    Then b\n';
+          var gherkinDocument = new Gherkin.Parser().parse(source);
+          feature = Cucumber.Ast.Feature(gherkinDocument.feature, 'uri', []);
+        });
+
+        it('returns the keyword', function() {
+          var description = feature.getScenarioDescriptionByLines([2]);
+          expect(description.trim()).toEqual('My scenario description');
+        });
+      });
+
+      describe('without a description', function() {
+        beforeEach(function() {
+          var source =
+            'Feature: Foo\n' +
+            '  Scenario: Bar\n' +
+            '    Then b\n';
+          var gherkinDocument = new Gherkin.Parser().parse(source);
+          feature = Cucumber.Ast.Feature(gherkinDocument.feature, 'uri', []);
+        });
+
+        it('returns the keyword', function() {
+          expect(feature.getScenarioDescriptionByLines([2])).toEqual(undefined);
+        });
+      });
+    });
+
+    describe('from an example in a scenario outline', function() {
+      describe('with a description', function() {
+        beforeEach(function() {
+          var source =
+            'Feature: Foo\n' +
+            '  Scenario Outline: Bar\n' +
+            '    My scenario outline description\n' +
+            '\n' +
+            '    When <what>\n' +
+            '\n' +
+            '  Examples:\n' +
+            '    | what |\n' +
+            '    | b    |';
+          var gherkinDocument = new Gherkin.Parser().parse(source);
+          feature = Cucumber.Ast.Feature(gherkinDocument.feature, 'uri', []);
+        });
+
+        it('returns the keyword', function() {
+          var description = feature.getScenarioDescriptionByLines([2]);
+          expect(description.trim()).toEqual('My scenario outline description');
+        });
+      });
+
+      describe('without a description', function() {
+        beforeEach(function() {
+          var source =
+            'Feature: Foo\n' +
+            '  Scenario Outline: Bar\n' +
+            '    When <what>\n' +
+            '  Examples:\n' +
+            '    | what |\n' +
+            '    | b    |';
+          var gherkinDocument = new Gherkin.Parser().parse(source);
+          feature = Cucumber.Ast.Feature(gherkinDocument.feature, 'uri', []);
+        });
+
+        it('returns the keyword', function() {
+          expect(feature.getScenarioDescriptionByLines([2])).toEqual(undefined);
+        });
       });
     });
   });
@@ -121,40 +199,6 @@ describe("Cucumber.Ast.Feature", function () {
   describe("getTags()", function () {
     it("returns the tags", function () {
       expect(feature.getTags()).toEqual([tag1, tag2]);
-    });
-  });
-
-  describe("acceptVisitor", function () {
-    var visitor, callback;
-
-    beforeEach(function () {
-      visitor  = createSpyWithStubs("visitor", {visitScenario: null});
-      callback = createSpy("callback");
-      feature.acceptVisitor(visitor, callback);
-    });
-
-    it("instructs the visitor to visit the first scenario", function() {
-      expect(visitor.visitScenario).toHaveBeenCalledWith(scenario1, jasmine.any(Function));
-    });
-
-    describe('after the first scenario is visited', function () {
-      beforeEach(function() {
-        visitor.visitScenario.calls.mostRecent().args[1]();
-      });
-
-      it("instructs the visitor to visit the second scenario", function() {
-        expect(visitor.visitScenario).toHaveBeenCalledWith(scenario2, jasmine.any(Function));
-      });
-
-      describe('after the second scenario is visited', function () {
-        beforeEach(function() {
-          visitor.visitScenario.calls.mostRecent().args[1]();
-        });
-
-        it("calls back", function() {
-          expect(callback).toHaveBeenCalled();
-        });
-      });
     });
   });
 });

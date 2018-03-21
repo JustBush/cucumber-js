@@ -1,3 +1,4 @@
+var path = require('path');
 require('../../support/spec_helper');
 
 describe("Cucumber.Listener.RerunFormatter", function () {
@@ -8,19 +9,17 @@ describe("Cucumber.Listener.RerunFormatter", function () {
     rerunFormatter = Cucumber.Listener.RerunFormatter();
   });
 
-  function createScenarioResultEvent(status, uri, line) {
+  function createScenarioResult(status, uri, line) {
     var scenario = createSpyWithStubs("event", {getLine: line, getUri: uri});
-    var scenarioResult = createSpyWithStubs("event", {getScenario: scenario, getStatus: status});
-    return createSpyWithStubs("event", {getPayloadItem: scenarioResult});
+    return createSpyWithStubs("event", {getScenario: scenario, getStatus: status});
   }
 
   describe("handleAfterFeaturesEvent()", function () {
-    describe('no failed scenarios', function() {
+    describe('all passing scenarios', function() {
       beforeEach(function(done){
-        var event = createScenarioResultEvent(Cucumber.Status.PASSED);
-        rerunFormatter.handleScenarioResultEvent(event, function() {});
-
-        rerunFormatter.handleAfterFeaturesEvent(null, done);
+        var scenarioResult = createScenarioResult(Cucumber.Status.PASSED);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult);
+        rerunFormatter.handleAfterFeaturesEvent([], done);
       });
 
       it("logs nothing", function () {
@@ -30,48 +29,87 @@ describe("Cucumber.Listener.RerunFormatter", function () {
 
     describe('one failed scenario', function() {
       beforeEach(function(done) {
-        var event = createScenarioResultEvent(Cucumber.Status.FAILED, 'path/to/scenario', 1);
-        rerunFormatter.handleScenarioResultEvent(event, function() {});
+        var scenarioResult = createScenarioResult(Cucumber.Status.FAILED, 'path/to/scenario', 1);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult);
 
         rerunFormatter.handleAfterFeaturesEvent(null, done);
       });
 
-      it("logs nothing", function () {
-        expect(rerunFormatter.getLogs()).toEqual('path/to/scenario:1');
+      it("logs the path to the failed scenario", function () {
+        expect(rerunFormatter.getLogs()).toEqual(path.normalize('path/to/scenario:1'));
+      });
+    });
+
+    describe('one ambiguous scenario', function() {
+      beforeEach(function(done) {
+        var scenarioResult = createScenarioResult(Cucumber.Status.AMBIGUOUS, 'path/to/scenario', 1);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult);
+
+        rerunFormatter.handleAfterFeaturesEvent(null, done);
+      });
+
+      it("logs the path to the ambiguous scenario", function () {
+        expect(rerunFormatter.getLogs()).toEqual(path.normalize('path/to/scenario:1'));
+      });
+    });
+
+    describe('one undefined scenario', function() {
+      beforeEach(function(done) {
+        var scenarioResult = createScenarioResult(Cucumber.Status.UNDEFINED, 'path/to/scenario', 1);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult);
+
+        rerunFormatter.handleAfterFeaturesEvent(null, done);
+      });
+
+      it("logs the path to the undefined scenario", function () {
+        expect(rerunFormatter.getLogs()).toEqual(path.normalize('path/to/scenario:1'));
+      });
+    });
+
+    describe('one pending scenario', function() {
+      beforeEach(function(done) {
+        var scenarioResult = createScenarioResult(Cucumber.Status.PENDING, 'path/to/scenario', 1);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult);
+
+        rerunFormatter.handleAfterFeaturesEvent(null, done);
+      });
+
+      it("logs the path to the pending scenario", function () {
+        expect(rerunFormatter.getLogs()).toEqual(path.normalize('path/to/scenario:1'));
       });
     });
 
     describe('two failed scenarios (same file)', function() {
       beforeEach(function(done) {
-        var event1 = createScenarioResultEvent(Cucumber.Status.FAILED, 'path/to/scenario', 1);
-        rerunFormatter.handleScenarioResultEvent(event1, function() {});
+        var scenarioResult1 = createScenarioResult(Cucumber.Status.FAILED, 'path/to/scenario', 1);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult1);
 
-        var event2 = createScenarioResultEvent(Cucumber.Status.FAILED, 'path/to/scenario', 2);
-        rerunFormatter.handleScenarioResultEvent(event2, function() {});
+        var scenarioResult2 = createScenarioResult(Cucumber.Status.FAILED, 'path/to/scenario', 2);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult2);
 
-        rerunFormatter.handleAfterFeaturesEvent(null, done);
+        rerunFormatter.handleAfterFeaturesEvent([], done);
       });
 
       it("logs the path to the failed scenarios", function () {
-        expect(rerunFormatter.getLogs()).toEqual('path/to/scenario:1:2');
+        expect(rerunFormatter.getLogs()).toEqual(path.normalize('path/to/scenario:1:2'));
       });
     });
 
     describe('two failed scenarios (different file)', function() {
       beforeEach(function(done) {
-        var event1 = createScenarioResultEvent(Cucumber.Status.FAILED, 'path/to/scenario', 1);
-        rerunFormatter.handleScenarioResultEvent(event1, function() {});
+        var scenarioResult1 = createScenarioResult(Cucumber.Status.FAILED, 'path/to/scenario', 1);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult1);
 
-        var event2 = createScenarioResultEvent(Cucumber.Status.FAILED, 'other/path/to/scenario', 1);
-        rerunFormatter.handleScenarioResultEvent(event2, function() {});
+        var scenarioResult2 = createScenarioResult(Cucumber.Status.FAILED, 'other/path/to/scenario', 1);
+        rerunFormatter.handleScenarioResultEvent(scenarioResult2);
 
-        rerunFormatter.handleAfterFeaturesEvent(null, done);
+        rerunFormatter.handleAfterFeaturesEvent([], done);
       });
 
       it("logs the path to the failed scenarios", function () {
         expect(rerunFormatter.getLogs()).toEqual(
-          'path/to/scenario:1' + '\n' +
-          'other/path/to/scenario:1'
+          path.normalize('path/to/scenario:1') + '\n' +
+          path.normalize('other/path/to/scenario:1')
         );
       });
     });
